@@ -1,0 +1,46 @@
+!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema de Riego Automatizado — Combinado</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>🌿 Sistema de Riego por Goteo — Automático + Manual</h1>
+
+      <div class="panel">
+        <h3>📊 Datos de sensores</h3>
+        <p>Humedad del suelo: <span id="humedad">50</span>%</p>
+        <p>Nivel de agua pluvial: <span id="nivelAgua">80</span>%</p>
+
+        <!-- Tanque circular -->
+        <div class="tanque">
+          <div class="agua" id="agua"></div>
+          <div class="porcentaje" id="porcentajeAgua">80%</div>
+        </div>
+
+        <p>
+          Caudal de riego (L/min):
+          <input type="number" id="caudal" min="1" max="20" value="5" />
+        </p>
+        <p>Tiempo estimado de riego: <span id="tiempo">--</span> min</p>
+        <p>Estado del riego: <span id="estado">Detenido ⛔</span></p>
+      </div>
+
+      <div class="buttons">
+        <button id="btnOn">Iniciar Riego Manual</button>
+        <button id="btnOff">Detener Riego Manual</button>
+      </div>
+
+      <p id="mensaje" class="mensaje"></p>
+
+      <footer>
+        🌧️ Proyecto sustentable: uso de agua pluvial en temporada de sequía.
+      </footer>
+    </div>
+
+    <script type="module" src="index.mjs"></script>
+  </body>
+</html>
