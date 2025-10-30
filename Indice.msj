@@ -1,0 +1,187 @@
+let humedad = 50;
+let nivelAgua = 30;
+let nivelReserva = 100; // nueva: porcentaje de reserva disponible
+const humedadMin = 5;
+const humedadMax = 75;
+const nivelMinAgua = 10; // mínimo antes de activar reserva
+const nivelRecarga = 80; // nivel al que se llena con reserva
+let riegoActivo = false;
+let intervaloRiegoManual = null;
+let usandoReserva = false;
+let recargandoReserva = false;
+
+// Elementos del DOM
+const humedadEl = document.getElementById("humedad");
+const nivelAguaEl = document.getElementById("nivelAgua");
+const caudalEl = document.getElementById("caudal");
+const tiempoEl = document.getElementById("tiempo");
+const estadoEl = document.getElementById("estado");
+const mensajeEl = document.getElementById("mensaje");
+const btnOn = document.getElementById("btnOn");
+const btnOff = document.getElementById("btnOff");
+
+// Actualiza la pantalla
+function actualizarPantalla() {
+  humedadEl.textContent = humedad.toFixed(1);
+  nivelAguaEl.textContent = nivelAgua.toFixed(1);
+  estadoEl.textContent = riegoActivo ? "Activo 💧" : "Detenido ⛔";
+  // Muestra reserva en consola o si tienes etiqueta en HTML, puedes actualizarla aquí
+  console.log(`Reserva de agua: ${nivelReserva.toFixed(1)}%`);
+}
+
+// Calcula tiempo estimado de riego según caudal
+function calcularTiempoRiego() {
+  const caudal = parseFloat(caudalEl.value);
+  if (isNaN(caudal) || caudal <= 0) return 0;
+  const diferenciaHumedad = Math.max(0, humedadMax - humedad);
+  const aguaNecesaria = diferenciaHumedad * 0.2; // 0.2 L por unidad de humedad
+  return aguaNecesaria / caudal;
+}
+
+// Activa la reserva de agua
+function activarReserva() {
+  if (usandoReserva || recargandoReserva) return;
+  if (nivelReserva <= 0) {
+    mensajeEl.textContent = "⚠️ Reserva vacía. Esperando recarga...";
+    recargarReserva();
+    return;
+  }
+
+  usandoReserva = true;
+  mensajeEl.textContent = "💦 Activando reserva de agua... recargando depósito";
+
+  const recarga = setInterval(() => {
+    if (nivelAgua < nivelRecarga && nivelReserva > 0) {
+      nivelAgua += 5; // se recarga poco a poco
+      nivelReserva -= 5; // la reserva se vacía
+      actualizarPantalla();
+    } else {
+      clearInterval(recarga);
+      usandoReserva = false;
+
+      if (nivelReserva <= 0) {
+        mensajeEl.textContent = "⚠️ Reserva agotada. Iniciando recarga...";
+        recargarReserva();
+      } else {
+        mensajeEl.textContent =
+          "✅ Reserva utilizada. Nivel restaurado al " + nivelRecarga + "%";
+      }
+
+      actualizarPantalla();
+    }
+  }, 500);
+}
+
+// Recarga automática de la reserva
+function recargarReserva() {
+  if (recargandoReserva) return;
+  recargandoReserva = true;
+  mensajeEl.textContent =
+    "🔄 Recargando reserva de agua (aguas subterráneas)...";
+
+  const carga = setInterval(() => {
+    if (nivelReserva < 100) {
+      nivelReserva += 2;
+      actualizarPantalla();
+    } else {
+      clearInterval(carga);
+      recargandoReserva = false;
+      mensajeEl.textContent = "💧 Reserva completamente recargada (100%)";
+      actualizarPantalla();
+    }
+  }, 800);
+}
+
+// Función para iniciar riego manual
+function iniciarRiegoManual() {
+  if (riegoActivo) return;
+  if (nivelAgua <= nivelMinAgua) {
+    mensajeEl.textContent =
+      "⚠️ Nivel de agua bajo. Activando reserva antes de regar...";
+    activarReserva();
+    return;
+  }
+  riegoActivo = true;
+  mensajeEl.textContent = "💧 Riego manual iniciado";
+  actualizarPantalla();
+
+  const incremento = 2; // Aumento de humedad por segundo
+  intervaloRiegoManual = setInterval(() => {
+    if (riegoActivo && humedad < humedadMax) {
+      humedad += incremento;
+      nivelAgua -= 1;
+      if (humedad >= humedadMax) {
+        humedad = humedadMax;
+        detenerRiegoManual();
+        mensajeEl.textContent =
+          "✅ Riego manual finalizado: humedad óptima alcanzada";
+      }
+      if (nivelAgua <= nivelMinAgua) {
+        mensajeEl.textContent =
+          "⚠️ Nivel mínimo alcanzado. Activando reserva...";
+        activarReserva();
+      }
+      actualizarPantalla();
+    }
+  }, 1000);
+}
+
+// Detener riego manual
+function detenerRiegoManual() {
+  if (!riegoActivo) return;
+  riegoActivo = false;
+  clearInterval(intervaloRiegoManual);
+  mensajeEl.textContent = "⛔ Riego manual detenido";
+  actualizarPantalla();
+}
+
+// Control automático
+function controlRiegoAutomatico() {
+  // Activar riego automáticamente
+  if (humedad < humedadMin && nivelAgua > nivelMinAgua && !riegoActivo) {
+    riegoActivo = true;
+    mensajeEl.textContent = "💧 Riego automático activado";
+  }
+
+  // Detener riego automáticamente
+  if ((humedad >= humedadMax || nivelAgua <= nivelMinAgua) && riegoActivo) {
+    riegoActivo = false;
+    if (nivelAgua <= nivelMinAgua) {
+      mensajeEl.textContent =
+        "⚠️ Riego detenido: nivel de agua bajo. Activando reserva...";
+      activarReserva();
+    } else {
+      mensajeEl.textContent =
+        "✅ Riego automático detenido: humedad óptima alcanzada";
+    }
+  }
+
+  // Simulación del riego automático
+  if (riegoActivo) {
+    humedad += 1.5;
+    nivelAgua -= 0.8;
+  } else {
+    humedad -= 0.5;
+  }
+
+  // Limitar valores
+  humedad = Math.max(0, Math.min(100, humedad));
+  nivelAgua = Math.max(0, Math.min(100, nivelAgua));
+  nivelReserva = Math.max(0, Math.min(100, nivelReserva));
+
+  // Actualizar tiempo estimado
+  const tiempo = calcularTiempoRiego();
+  tiempoEl.textContent = tiempo > 0 ? tiempo.toFixed(1) : "--";
+
+  actualizarPantalla();
+}
+
+// Eventos de botones manuales
+btnOn.addEventListener("click", iniciarRiegoManual);
+btnOff.addEventListener("click", detenerRiegoManual);
+
+// Control automático cada 2 segundos
+setInterval(controlRiegoAutomatico, 2000);
+
+// Inicializar pantalla
+actualizarPantalla();
